@@ -3,7 +3,7 @@
 
 # Clone our Project
 ```bash
-git clone https://github.com/SAILAKKSHMEDOKKU/Wait-k---Context-consistency-model--SIMT.git
+git clone https://github.com/SAILAKKSHMEDOKKU/Wait-k---Context-consistency-model-SIMT.git
 ```
 
 # Requirements and Installation
