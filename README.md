@@ -28,7 +28,7 @@ bash prepare-iwslt14.sh
 cd ../..
 
 # Preprocess/binarize the data
-TEXT=examples/translation/iwslt14.tokenized.de-en
+TEXT="examples/translation/iwslt14_deen_bpe10k"
 fairseq-preprocess --source-lang de --target-lang en \
     --trainpref $TEXT/train --validpref $TEXT/valid --testpref $TEXT/test \
     --destdir data-bin/iwslt14.tokenized.de-en \
@@ -37,7 +37,7 @@ fairseq-preprocess --source-lang de --target-lang en \
 
 # Train Pervasive Attention on the pre-processed data:
 ```bash
-MODEL=pa_iwslt_de_en
+MODEL="pa_iwslt_de_en"
 mkdir -p checkpoints/$MODEL
 mkdir -p logs
 CUDA_VISIBLE_DEVICES=0 python train.py data-bin/iwslt14.tokenized.de-en -s de -t en \
@@ -69,7 +69,7 @@ CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en \
 # Training Wait-k Pervasive Attention for IWSLT'14 De-En:
 ```bash
 k=7
-MODEL=pa_wait${k}_iwslt_deen
+MODEL="pa_wait${k}_iwslt_deen"
 mkdir -p checkpoints/$MODEL
 mkdir -p logs
 CUDA_VISIBLE_DEVICES=0 python train.py data-bin/iwslt14.tokenized.de-en -s de -t en \
