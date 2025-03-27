@@ -1,6 +1,11 @@
 
 # Wait-k with Context-Consistency-Bi Training
 
+# Clone our Project
+```bash
+git clone https://github.com/SAILAKKSHMEDOKKU/Wait-k---Context-consistency-model--SIMT.git
+```
+
 # Requirements and Installation
 
 * [PyTorch](http://pytorch.org/) version >= 1.4.0
@@ -13,32 +18,82 @@ cd Waitk-Consistency-Bi-Training
 pip install --editable .
 ```
 
-# Training
-Train wait-k model using context-consistency-bi with the following command:
+# Training Pervasive Attention for IWSLT'14 De-En:
+# Download and pre-process the dataset:
+
 ```bash
-CUDA_VISIBLE_DEVICES=$gpu python $code_dir/train.py $data_bin -s $SRC -t $TGT --left-pad-source False \
-    --user-dir $code_dir/examples/waitk --arch $arch --save-dir $MODEL  \
-    --ddp-backend=no_c10d --fp16 \
-    --seed 1 --no-epoch-checkpoints --no-progress-bar --log-interval 10  \
-    --optimizer adam --adam-betas '(0.9, 0.98)' --weight-decay 0.0001 --clip-norm 0.1 --dropout 0.3 \
-    --max-tokens 4000 --update-freq 2  --max-update 2300 \
-    --lr-scheduler inverse_sqrt --warmup-updates 4000 --warmup-init-lr '1e-07' --lr 5e-4 --min-lr '1e-9' \
-    --criterion minimum_risk_training_loss_with_al \
-    --share-decoder-input-output-embed --waitk  $k  \
-    --reset-optimizer --reset-lr-scheduler  --reset-meters \
-    --mrt-beam-size $beam_size \
-    --mrt-seq-max-len-a 1.5 --mrt-seq-max-len-b 5 \
-    --mrt-temperature $temperature \
-    --mrt-greedy false \
-    --mrt-alpha $alpha 
+# Download and prepare the data
+cd examples/translation/
+bash prepare-iwslt14.sh
+cd ../..
+
+# Preprocess/binarize the data
+TEXT=examples/translation/iwslt14.tokenized.de-en
+fairseq-preprocess --source-lang de --target-lang en \
+    --trainpref $TEXT/train --validpref $TEXT/valid --testpref $TEXT/test \
+    --destdir data-bin/iwslt14.tokenized.de-en \
+    --workers 20
 ```
 
-# Testing
+# Train Pervasive Attention on the pre-processed data:
 ```bash
-CUDA_VISIBLE_DEVICES=$gpu python $code_dir/generate.py $data_bin \
-    -s $SRC -t $TGT --gen-subset $subset \
-    --path $MODEL/checkpoint_best.pt --task waitk_translation --eval-waitk $testk \
+MODEL=pa_iwslt_de_en
+mkdir -p checkpoints/$MODEL
+mkdir -p logs
+CUDA_VISIBLE_DEVICES=0 python train.py data-bin/iwslt14.tokenized.de-en -s de -t en \
+    --user-dir examples/pervasive --arch pervasive \
+    --max-source-positions 100  --max-target-positions 100 \
+    --left-pad-source False --skip-invalid-size-inputs-valid-test \
+    --save-dir checkpoints/$MODEL --tensorboard-logdir logs/$MODEL\
+    --seed 1 --memory-efficient --no-epoch-checkpoints --no-progress-bar --log-interval 10 \
+    --optimizer adam --adam-betas '(0.9, 0.98)' --weight-decay 0.0001 \
+    --max-tokens 600 --update-freq 14 --max-update 50000 \
+    --lr-scheduler inverse_sqrt --warmup-updates 4000 --warmup-init-lr '1e-07' --lr 0.002 \
+    --min-lr '1e-9' --criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
+    --convnet resnet --conv-bias --num-layers 14 --kernel-size 11  \
+    --aggregator gated-max --add-positional-embeddings --share-decoder-input-output-embed
+```
+
+# Evaluate on the test set:
+```bash
+CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en \
+    -s de -t en --gen-subset test \
+    --path checkpoints/pa_iwslt_de_en/checkpoint_best.pt \
     --model-overrides "{'max_source_positions': 1024, 'max_target_positions': 1024}" --left-pad-source False  \
-    --user-dir $code_dir/examples/waitk --no-progress-bar \
-    --max-tokens 8000 --remove-bpe --beam 1 
+    --user-dir examples/pervasive --no-progress-bar \
+    --max-tokens 8000 --beam 5 --remove-bpe 
+```
+
+# Wait-k decoding with Pervasive Attention
+
+# Training Wait-k Pervasive Attention for IWSLT'14 De-En:
+```bash
+k=7
+MODEL=pa_wait${k}_iwslt_deen
+mkdir -p checkpoints/$MODEL
+mkdir -p logs
+CUDA_VISIBLE_DEVICES=0 python train.py data-bin/iwslt14.tokenized.de-en -s de -t en \
+    --user-dir examples/pervasive --arch pervasive \
+    --max-source-positions 100  --max-target-positions 100 \
+    --left-pad-source False --skip-invalid-size-inputs-valid-test \
+    --save-dir checkpoints/$MODEL --tensorboard-logdir logs/$MODEL \
+    --seed 1 --memory-efficient --no-epoch-checkpoints --no-progress-bar --log-interval 10  \
+    --optimizer adam --adam-betas '(0.9, 0.98)' --weight-decay 0.0001 \
+    --max-tokens 600 --update-freq 14 --max-update 50000 \
+    --lr-scheduler inverse_sqrt --warmup-updates 4000 --warmup-init-lr '1e-07' --lr 0.002 \
+    --min-lr '1e-9' --criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
+    --convnet resnet --conv-bias --num-layers 14 --kernel-size 11  \
+    --add-positional-embeddings --share-decoder-input-output-embed \
+    --aggregator path-gated-max --waitk $k --unidirectional
+```
+
+# Evaluate on the test set:
+```bash
+k=5 # Evaluation time k
+CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en \
+    -s de -t en --gen-subset test \
+    --path checkpoints/pa_wait7_iwslt_deen/checkpoint_best.pt --task waitk_translation --eval-waitk $k \
+    --model-overrides "{'max_source_positions': 1024, 'max_target_positions': 1024}" --left-pad-source False  \
+    --user-dir examples/pervasive --no-progress-bar \
+    --max-tokens 8000 --remove-bpe --beam 1
 ```
