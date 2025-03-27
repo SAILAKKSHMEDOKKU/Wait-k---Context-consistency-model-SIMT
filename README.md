@@ -3,7 +3,7 @@
 
 # Clone our Project
 ```bash
-git clone https://github.com/SAILAKKSHMEDOKKU/Wait-k---Context-consistency-model--SIMT.git
+git clone https://github.com/SAILAKKSHMEDOKKU/Wait-k---Context-consistency-model-SIMT.git
 ```
 
 # Requirements and Installation
@@ -23,7 +23,7 @@ pip install --editable .
 
 ```bash
 # Download and prepare the data
-cd examples/translation/
+%cd Wait-k---Context-consistency-model-SIMT/
 bash prepare-iwslt14.sh
 cd ../..
 
