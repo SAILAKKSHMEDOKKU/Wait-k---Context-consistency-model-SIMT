@@ -23,7 +23,7 @@ pip install --editable .
 
 ```bash
 # Download and prepare the data
-cd examples/translation/
+%cd Wait-k---Context-consistency-model-SIMT/
 bash prepare-iwslt14.sh
 cd ../..
 
