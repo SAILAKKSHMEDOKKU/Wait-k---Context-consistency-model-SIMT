@@ -11,6 +11,7 @@ import logging
 import math
 import os
 import sys
+import argparse
 
 import torch
 
@@ -66,6 +67,8 @@ def _main(args, output_file):
 
     # Load ensemble
     logger.info('loading model(s) from {}'.format(args.path))
+    # Add argparse.Namespace to safe globals before loading checkpoint
+    torch.serialization.add_safe_globals([argparse.Namespace])
     models, _model_args = checkpoint_utils.load_model_ensemble(
         utils.split_paths(args.path),
         arg_overrides=eval(args.model_overrides),
@@ -82,6 +85,7 @@ def _main(args, output_file):
             model.half()
         if use_cuda:
             model.cuda()
+
 
     # Load alignment dictionary for unknown word replacement
     # (None if no unknown word replacement, empty if no path to align dictionary)
