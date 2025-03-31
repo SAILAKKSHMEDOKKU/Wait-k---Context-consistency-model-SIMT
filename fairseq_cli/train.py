@@ -65,7 +65,8 @@ def main(args, init_distributed=False):
 
     # Load valid dataset (we load training data below, based on the latest checkpoint)
     for valid_sub_split in args.valid_subset.split(','):
-        task.load_dataset(valid_sub_split, combine=False, epoch=1)
+            task.load_dataset(valid_sub_split, combine=False, epoch=1)
+            dataset.truncate(max_tokens=25000)
 
     # Build model and criterion
     model = task.build_model(args)
