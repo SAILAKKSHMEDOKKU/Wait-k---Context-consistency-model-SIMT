@@ -65,7 +65,16 @@ def main(args, init_distributed=False):
 
     # Load valid dataset (we load training data below, based on the latest checkpoint)
     for valid_sub_split in args.valid_subset.split(','):
-        task.load_dataset(valid_sub_split, combine=False, epoch=1)
+        dataset = task.load_dataset(valid_sub_split, combine=False, epoch=1)
+
+        # Limit the size of the dataset (for example, first 10,000 samples)
+        max_valid_size = 10000
+        if hasattr(dataset, 'truncate'):
+            dataset.truncate(max_valid_size)  # If dataset supports truncation
+        else:
+            dataset = dataset[:max_valid_size]  # Otherwise, manually slice
+
+        task.datasets[valid_sub_split] = dataset  # Replace with limited dataset
 
     # Build model and criterion
     model = task.build_model(args)
