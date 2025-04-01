@@ -143,10 +143,9 @@ CUDA_VISIBLE_DEVICES=0 python train.py data-bin/iwslt14.tokenized.de-en \
 
 # Evaluate on the test set:
 ```bash
-k=5 # Evaluation time k
 CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en \
     -s de -t en --gen-subset test \
-    --path checkpoints/pa_wait7_iwslt_deen/checkpoint_best.pt --task waitk_translation --eval-waitk $k \
+    --path checkpoints/pa_wait7_iwslt_deen/checkpoint_best.pt --task waitk_translation --eval-waitk 7 \
     --model-overrides "{'max_source_positions': 1024, 'max_target_positions': 1024}" --left-pad-source False  \
     --user-dir examples/pervasive --no-progress-bar \
     --max-tokens 8000 --remove-bpe --beam 1
